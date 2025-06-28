@@ -1,0 +1,563 @@
+/* Basic CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Charity: water Brand Colors
+Primary Colors:
+- Yellow:     #FFC907
+- Blue:       #2E9DF7
+
+Secondary Colors:
+- Light Blue: #8BD1CB
+- Green:      #4FCB53
+- Orange:     #FF902A
+- Red:        #F5402C
+- Dark Green: #159A48
+- Pink:       #F16061
+*/
+
+/* Mobile-First Base Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #FFC907 0%, #FFE066 40%, #fff 100%);
+}
+
+.play-page {
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+.daytime {
+  background: linear-gradient(to bottom, 
+    #8BD1CB 0%,      /* Light Blue - sky top */
+    #2E9DF7 60%     /* Primary Blue - mid sky */
+);
+}
+
+.sunset {
+  background: linear-gradient(to bottom, 
+    #FF902A 0%,      /* Orange - sky top */
+    #F16061 60%     /* Pink - mid sky */
+);
+}
+
+.status-bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 0.5rem 1.6rem;
+  min-height: 50px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  font-weight: bold;
+  background: whitesmoke;
+}
+
+.stamina-group {
+  white-space: nowrap;
+}
+
+.time {
+  background-color: #4FCB53;
+  font-size: 1.4rem;
+  border-radius: 1.2em;
+  padding: 0.2em 0.8em;
+  display: inline-block;
+}
+
+/* Main container - mobile first */
+.main-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+/* Logo - mobile first */
+.logo {
+  width: 55%;
+  max-width: 180px;
+  height: auto;
+  margin-bottom: 3rem;
+  position: static;
+  padding: 1.2rem;
+  background: #fff;
+}
+
+/* Main title - mobile first */
+h1 {
+  font-size: 2.5rem;
+  font-weight: bolder;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Subtitle - mobile first */
+.subtitle {
+  font-size: 1.1rem;
+  color: #222;
+  text-align: center;
+  margin-bottom: 3rem;
+  line-height: 1.4;
+  max-width: 85%;
+  padding: 0 1rem;
+}
+
+/* Buttons - mobile first */
+.menu-button {
+  display: block;
+  width: 85%;
+  max-width: 280px;
+  padding: 1rem;
+  margin: 0 auto 1.5rem auto;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.menu-button.start {
+  background: #2E9DF7; /* Charity: water Blue */
+  color: #111; /* Use very dark text for better contrast */
+  border: 2px solid #2E9DF7;
+  font-size: 1.5rem;
+}
+
+.menu-button.start:hover,
+.menu-button.start:active {
+  background: #1976c5; /* Slightly darker blue for hover */
+  border-color: #1976c5;
+  color: #fff; /* White text on darker blue for contrast */
+}
+
+.menu-button.about {
+  background: #FFC907; /* Charity: water Yellow */
+  color: #222;
+  border: 2px solid #FFC907;
+  font-size: 0.95rem;
+  font-weight: normal;
+  width: 60%;
+  margin-bottom: 0;
+}
+
+.menu-button.about:hover,
+.menu-button.about:active {
+  background: #FFC300; /* Darker Yellow on hover */
+  border-color: #FFC300;
+  color: #222;
+}
+
+.buttons {
+  display: flex;
+  gap: 1.3rem;
+}
+
+.gameplay-button {
+  border: 3px solid #159A48; /* Eco green border */
+  font-size: 1.3rem;
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #159A48; /* Eco green text */
+  box-shadow: 0 2px 6px rgba(21,154,72,0.10);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  padding: 0;
+  font-weight: bold;
+}
+
+.gameplay-button:hover,
+.gameplay-button.pause-button:focus {
+  background: #4FCB53; /* Eco green background on hover */
+  color: #fff;
+  border-color: #159A48;
+}
+
+.game-container {
+  position: absolute;
+  top: 15vh;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Hide objects that move off-screen */
+}
+
+.sky-container {
+  position: relative;
+  width: 100vw;
+  height: 30vh;
+  min-height: 120px;
+  overflow: hidden;
+}
+
+.cloud {
+  background-image: url('img/cloud.png');
+  background-size: cover;
+  transition: transform 0.05s linear;
+}
+
+/* Mobile-first: smallest clouds */
+.cloud1 {
+  position: absolute;
+  top: 23%;
+  left: 10%;
+  width: 60px;
+  height: 40px;
+  opacity: 0.85;
+}
+
+.cloud2 {
+  position: absolute;
+  top: 14%;
+  left: 60%;
+  width: 80px;
+  height: 55px;
+  opacity: 0.7;
+}
+
+.cloud3 {
+  position: absolute;
+  top: 37%;
+  left: 40%;
+  width: 50px;
+  height: 35px;
+  opacity: 0.8;
+}
+
+.sun {
+  position: absolute;
+  top: 4%;
+  right: 4%;
+  width: 48px;
+  height: 48px;
+  background: #FFC907;
+  border-radius: 50%;
+  box-shadow: 0 0 40px 10px rgba(255, 201, 7, 0.45);
+  z-index: 2;
+  transition: none;
+
+}
+
+.player {
+  position: fixed;
+  bottom: 20vh; /* Adjusted to sit above the ground */
+  left: 10%;
+  width: 90px;
+  height: 90px;
+  background-image: url('img/character.png'); /* Placeholder for player image */
+  background-size: cover;
+  z-index: 10;
+  transition: none;
+}
+
+.objects {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Game Objects Styles */
+.game-object {
+  position: fixed;
+  bottom: 20vh;
+  width: 80px;
+  height: 80px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 9;
+  transition: none;
+}
+
+.ground {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 20vh;
+  background: linear-gradient(to bottom, #D4A574 0%, #C19558 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-object,
+.player,
+.cloud,
+.sun {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Tablet Styles */
+@media screen and (min-width: 768px) {
+
+  .status-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.5rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .status-bar .water-group {
+    order: 1;
+  }
+
+  .status-bar .time {
+    order: 2;
+  }
+
+  .status-bar .stamina-group {
+    order: 3;
+  }
+
+  .main-container {
+    max-width: 600px;
+    padding: 3rem 2rem;
+  }
+
+  .logo {
+    width: 50%;
+    max-width: 250px;
+    margin-bottom: 3rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.3rem;
+    margin-bottom: 3rem;
+    max-width: 450px;
+  }
+
+  .menu-button {
+    width: 70%;
+    max-width: 320px;
+    padding: 1.2rem;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .menu-button.about {
+    width: 45%;
+    max-width: 260px;
+    font-size: 1.05rem;
+    padding: 1.1rem;
+  }
+
+  .cloud1 {
+    width: 90px;
+    height: 60px;
+  }
+  .cloud2 {
+    width: 120px;
+    height: 90px;
+  }
+  .cloud3 {
+    width: 70px;
+    height: 60px;
+  }
+
+  .sun {
+    width: 70px;
+    height: 70px;
+    top: 3%;
+    right: 5%;
+  }
+
+  .player {
+    width: 140px;
+    height: 140px;
+    transition: left 0.1s ease-out;
+  }
+
+  .game-object {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Desktop Styles */
+@media screen and (min-width: 1024px) {
+  .main-container {
+    max-width: 800px;
+    padding: 3rem;
+  }
+
+  .logo {
+    position: fixed;
+    top: 13%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 300px;
+    margin-bottom: 0;
+  }
+
+  /* Adjust main container to account for fixed logo */
+  .main-container {
+    padding-top: 140px;
+  }
+
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+    max-width: 500px;
+  }
+
+  .menu-button {
+    width: 50%;
+    max-width: 350px;
+    padding: 1rem;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .menu-button.about {
+    width: 45%;
+    max-width: 220px;
+    font-size: 1.1rem;
+    padding: 1rem;
+  }
+
+  .menu-button:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .cloud1 {
+    width: 120px;
+    height: 90px;
+  }
+  .cloud2 {
+    width: 160px;
+    height: 140px;
+  }
+  .cloud3 {
+    width: 100px;
+    height: 80px;
+  }
+
+  .sun {
+    width: 90px;
+    height: 90px;
+    top: 2%;
+    right: 6%;
+  }
+
+  .player {
+    width: 180px;
+    height: 180px;
+  }
+
+  .gameplay-button {
+    width: 100px;
+    height: 100px;
+  }
+
+  .game-object {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+/* Large Desktop Styles */
+@media screen and (min-width: 1440px) {
+  .main-container {
+    max-width: 900px;
+  }
+
+  .logo {
+    max-width: 350px;
+  }
+
+  h1 {
+    font-size: 3.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.6rem;
+  }
+
+  .menu-button {
+    width: 40%;
+    max-width: 400px;
+    font-size: 1.4rem;
+  }
+
+  .menu-button.about {
+    width: 35%;
+    max-width: 200px;
+    font-size: 1.15rem;
+  }
+}
+
+/* High DPI displays */
+@media screen and (min-resolution: 2dppx) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Landscape mobile orientation */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .main-container {
+    padding: 1rem;
+    justify-content: flex-start;
+    padding-top: 1rem;
+  }
+
+  .logo {
+    width: 40%;
+    max-width: 150px;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .menu-button {
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+}
