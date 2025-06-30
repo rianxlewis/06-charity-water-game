@@ -10,6 +10,138 @@ let gameActive = true; // Controls if the game is still active
 let isMoving = false; // Track if player is currently moving
 let isPaused = false; // Track if game is paused
 
+// Sound System
+let audioEnabled = true;
+const sounds = {
+  collect: null,
+  hill: null,
+  rock: null,
+  snake: null,
+  thermometer: null,
+  win: null,
+  lose: null,
+  choice: null,
+  milestone: null
+};
+
+// Initialize sound system
+function initializeSounds() {
+  try {
+    // Use Audio objects for each sound file
+    sounds.collect = new Audio('sounds/water.mp3');
+    sounds.hill = new Audio('sounds/hill.mp3');
+    sounds.rock = new Audio('sounds/rock.mp3');
+    sounds.snake = new Audio('sounds/snake.mp3');
+    sounds.thermometer = new Audio('sounds/heat.mp3');
+    sounds.win = new Audio('sounds/win.mp3');
+    sounds.lose = new Audio('sounds/lose.mp3');
+    sounds.choice = new Audio('sounds/choice.mp3');
+    sounds.milestone = new Audio('sounds/milestone.mp3');
+
+    // Set volume levels for all sounds
+    Object.values(sounds).forEach(sound => {
+      if (sound) {
+        sound.volume = 0.3;
+      }
+    });
+  } catch (error) {
+    console.log('Audio initialization failed:', error);
+    audioEnabled = false;
+  }
+}
+
+// Play a sound by name
+function playSound(soundName) {
+  if (!audioEnabled || !sounds[soundName]) return;
+
+  try {
+    sounds[soundName].currentTime = 0;
+    sounds[soundName].play().catch(e => {
+      console.log('Sound play failed:', e);
+    });
+  } catch (error) {
+    console.log('Sound play error:', error);
+  }
+}
+
+// Milestone System
+let milestones = [
+  {
+    id: 'noon',
+    triggered: false,
+    condition: () => gameTime.hours >= 12,
+    message: '🕛 NOON MILESTONE 🕛\n\nIt\'s already noon and you\'re still walking.\n\nFact: The average distance to a water source in rural areas is 6 kilometers.',
+    type: 'time'
+  },
+  {
+    id: 'afternoon',
+    triggered: false,
+    condition: () => gameTime.hours >= 15,
+    message: '🕒 LATE AFTERNOON 🕒\n\nTime is running short - sunset approaches.\n\nFact: 1 in 4 health care facilities worldwide lack basic water services.',
+    type: 'time'
+  },
+  {
+    id: 'evening',
+    triggered: false,
+    condition: () => gameTime.hours >= 18,
+    message: '🌅 EVENING APPROACHES 🌅\n\nDanger increases as darkness falls.\n\nFact: When water is not available on premises, women and girls bear primary responsibility for water collection.',
+    type: 'time'
+  }
+];
+
+function checkMilestones() {
+  milestones.forEach(milestone => {
+    if (!milestone.triggered && milestone.condition()) {
+      milestone.triggered = true;
+      showMilestone(milestone.message);
+      playSound('milestone');
+    }
+  });
+}
+
+function showMilestone(message) {
+  const milestoneContainer = document.getElementById('milestoneContainer');
+  const milestoneMessage = document.getElementById('milestoneMessage');
+  
+  // Show milestone message
+  milestoneMessage.textContent = message;
+  milestoneMessage.classList.add('show');
+  
+  // Hide after 4 seconds
+  setTimeout(() => {
+    milestoneMessage.classList.remove('show');
+    milestoneMessage.classList.add('hide');
+    
+    // Clean up after animation
+    setTimeout(() => {
+      milestoneMessage.classList.remove('hide');
+    }, 400);
+  }, 4000);
+}
+
+// Difficulty settings
+let difficulty = 'normal'; // Default difficulty
+let difficultySettings = {
+  easy: {
+    timeMultiplier: 0.8,     // Slower time progression
+    staminaDrainRate: 0.8,   // Slower stamina loss over time
+    penaltyMultiplier: 0.8,  // Reduced penalties
+    label: 'Easy'
+  },
+  normal: {
+    timeMultiplier: 1,       // Normal time progression  
+    staminaDrainRate: 1,     // Normal stamina loss over time
+    penaltyMultiplier: 1,    // Normal penalties
+    label: 'Normal'
+  },
+  hard: {
+    timeMultiplier: 1.3,     // Faster time progression
+    staminaDrainRate: 1.2,   // Faster stamina loss over time
+    penaltyMultiplier: 1.5,  // Increased penalties
+    label: 'Hard'
+  }
+};
+
 // Timer variables
 let gameTime = { hours: 8, minutes: 0 }; // Start at 8:00 AM
 let timerInterval;
@@ -60,6 +192,74 @@ const objectEffects = {
   }
 };
 
+// Choice options for obstacles
+const obstacleChoices = {
+  "img/hill.png": {
+    title: "Steep Hill Ahead",
+    scenario: "A large hill blocks your path. You can climb over it directly or take the longer route around it.",
+    options: [
+      {
+        title: "Climb Over Hill",
+        description: "Go straight over the hill. Steep climb that will exhaust you but saves time.",
+        effects: { stamina: -15, water: 0, time: 10 }
+      },
+      {
+        title: "Walk Around Hill",
+        description: "Take the longer path around the hill. Easier on your body but takes much more time.",
+        effects: { stamina: -5, water: 0, time: 25 }
+      }
+    ]
+  },
+  "img/rock.png": {
+    title: "Rocky Terrain",
+    scenario: "Sharp rocks cover the path ahead. You can carefully navigate through them or try to rush across.",
+    options: [
+      {
+        title: "Navigate Carefully",
+        description: "Pick your way slowly through the rocks. Safer but takes more time.",
+        effects: { stamina: -5, water: -2, time: 15 }
+      },
+      {
+        title: "Rush Across",
+        description: "Run quickly across the rocky terrain. Risk falling and spilling water.",
+        effects: { stamina: -10, water: -5, time: 5 }
+      }
+    ]
+  },
+  "img/snake.png": {
+    title: "Dangerous Snake",
+    scenario: "A venomous snake blocks your path. You must decide how to handle this deadly encounter.",
+    options: [
+      {
+        title: "Try to Scare It",
+        description: "Make noise and throw rocks to scare the snake away. Risky but faster.",
+        effects: { stamina: -20, water: 0, time: 10 }
+      },
+      {
+        title: "Go Around Carefully",
+        description: "Take a wide detour around the snake. Much safer but takes longer.",
+        effects: { stamina: -8, water: 0, time: 20 }
+      }
+    ]
+  },
+  "img/thermometer.png": {
+    title: "Scorching Heat",
+    scenario: "The sun is blazing overhead with no shade in sight. You must decide how to handle this dangerous heat.",
+    options: [
+      {
+        title: "Rest and Wait",
+        description: "Stop and rest until the heat subsides. Preserves energy but loses precious time.",
+        effects: { stamina: 5, water: -3, time: 30 }
+      },
+      {
+        title: "Push Through Heat",
+        description: "Keep walking despite the dangerous heat. Faster but risks heat exhaustion.",
+        effects: { stamina: -15, water: -10, time: 0 }
+      }
+    ]
+  }
+};
+
 // Camera settings - player screen position
 let PLAYER_SCREEN_POSITION; // Where player stays on screen
 
@@ -85,27 +285,36 @@ function startTimer() {
 function updateTimer() {
   if (!gameActive || isPaused) return;
   
-  // Jump 2 minutes every 100ms
-  gameTime.minutes += 2;
+  // Jump time based on difficulty setting
+  const timeIncrement = 2 * difficultySettings[difficulty].timeMultiplier;
+  gameTime.minutes += timeIncrement;
   
   if (gameTime.minutes >= 60) {
     gameTime.minutes -= 60;
     gameTime.hours += 1;
   }
-  
-  // Handle stamina based on movement state
+
+  // Change background to sunset at 6PM (18:00)
+  if (gameTime.hours >= 18) {
+    // Get the body element and add the 'sunset' class, remove 'daytime'
+    document.body.classList.add('sunset');
+    document.body.classList.remove('daytime');
+  }
+
+  // Handle stamina based on movement state and difficulty rates
   if (isMoving) {
-    // Decrease stamina when moving
-    stamina -= STAMINA_DECREASE_RATE;
+    // Decrease stamina when moving (affected by difficulty drain rate)
+    stamina -= STAMINA_DECREASE_RATE * difficultySettings[difficulty].staminaDrainRate;
     if (stamina < 0) stamina = 0;
   } else {
-    // Slowly increase stamina when resting (not moving)
+    // Slowly increase stamina when resting (affected by difficulty regen rate)
     stamina += STAMINA_INCREASE_RATE;
     if (stamina > 100) stamina = 100;
   }
   
   updateTimerDisplay();
   updateStaminaDisplay();
+  checkMilestones(); // Check for milestone achievements
   checkGameEnd();
 }
 
@@ -154,7 +363,7 @@ function updateStaminaDisplay() {
 function formatTime(hours, minutes) {
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-  const displayMinutes = minutes.toString().padStart(2, '0');
+  const displayMinutes = Math.floor(minutes).toString().padStart(2, '0');
   return `${displayHours}:${displayMinutes} ${period}`;
 }
 
@@ -164,13 +373,14 @@ function checkGameEnd() {
     gameActive = false;
     clearInterval(timerInterval);
     clearInterval(moveInterval);
-    
-    // Visual feedback that game ended
+
+    playSound('lose');
+
     const timerElement = document.getElementById('timer');
     timerElement.style.backgroundColor = '#dc3545';
     timerElement.style.color = 'white';
     timerElement.textContent = '⏱ 8:00 PM - Too Late!';
-    
+
     const timeFailMessage = `⏰ TOO LATE! ⏰
 
 You didn't make it home before dark. Now you face a terrible choice:
@@ -192,18 +402,23 @@ Help ensure families have clean water close to home.
 Learn more: https://www.charitywater.org
 
 🔄 To play again, refresh this page.`;
-    
-    alert(timeFailMessage);
+
+    // Show the outcome in a centered div after a short delay
+    setTimeout(() => {
+      showEndOutcome(timeFailMessage);
+    }, 200);
+
   } else if (stamina <= 0) {
     gameActive = false;
     clearInterval(timerInterval);
     clearInterval(moveInterval);
-    
-    // Visual feedback for stamina depletion
+
+    playSound('lose');
+
     const staminaElement = document.getElementById('staminaPercentage');
     const staminaGroup = document.getElementById('staminaGroup');
     staminaElement.textContent = '0% - Collapsed!';
-    
+
     const staminaFailMessage = `😵 COLLAPSED FROM EXHAUSTION! 😵
 
 Your body gave out during the journey. You collapsed miles from home.
@@ -223,8 +438,10 @@ Help bring clean water closer to communities.
 Learn more: https://www.charitywater.org
 
 🔄 To play again, refresh this page.`;
-    
-    alert(staminaFailMessage);
+
+    setTimeout(() => {
+      showEndOutcome(staminaFailMessage);
+    }, 200);
   }
 }
 
@@ -289,9 +506,6 @@ function generateRandomObjects() {
     
     // Set object styles
     objectElement.style.position = 'fixed';
-    objectElement.style.bottom = '20vh'; // Same height as player
-    objectElement.style.width = '80px'; // Fixed width
-    objectElement.style.height = '80px'; // Fixed height
     objectElement.style.zIndex = '9'; // Below player (player is z-index 10)
     
     // Check if this is the final object (house)
@@ -354,24 +568,257 @@ function checkObjectCollisions() {
 // Function to apply object effects
 function applyObjectEffect(obj) {
   const objectType = obj.getAttribute('data-object-type');
-  const effect = objectEffects[objectType];
-  
-  if (!effect) return;
-  
+  lastTouchedObjectType = objectType; // Save for use in choice effects
+
+  // Play the correct sound for each object type immediately when hit
+  // Use .play() on a new Audio object each time to allow overlapping sounds
+  if (objectType === "img/water-can-transparent.png") {
+    // Water can sound
+    new Audio('sounds/water.mp3').play();
+  } else if (objectType === "img/hill.png") {
+    // Hill sound
+    new Audio('sounds/hill.mp3').play();
+  } else if (objectType === "img/rock.png") {
+    // Rock sound
+    new Audio('sounds/rock.mp3').play();
+  } else if (objectType === "img/snake.png") {
+    // Snake sound
+    new Audio('sounds/snake.mp3').play();
+  } else if (objectType === "img/thermometer.png") {
+    // Heat sound
+    new Audio('sounds/heat.mp3').play();
+  } else {
+    playSound('obstacle');
+  }
+
   // Mark object as touched so it doesn't trigger again
   obj.setAttribute('data-touched', 'true');
   
+  // Visual feedback - object stays visible but gets a gray overlay
+  obj.style.opacity = '0.5';
+  obj.style.filter = 'grayscale(100%)';
+  
+  // Stop movement before showing choice
+  stopMoving();
+  rightKeyDown = false; // Reset key state
+  gameActive = false; // Pause game during choice
+  
+  // Check if this obstacle has choices
+  if (obstacleChoices[objectType]) {
+    const choice = obstacleChoices[objectType];
+    
+    // Play choice sound
+    playSound('choice');
+    
+    // Create urgency message based on current state
+    let urgencyMessage = '';
+    if (stamina < 30 && gameTime.hours >= 16) {
+      urgencyMessage = '\n⚠️ CRITICAL: Low stamina + late hour = extremely dangerous\n';
+    } else if (stamina < 50) {
+      urgencyMessage = '\n⚠️ WARNING: Low stamina makes risky choices more dangerous\n';
+    } else if (gameTime.hours >= 17) {
+      urgencyMessage = '\n⏰ TIME PRESSURE: Getting late - every minute counts\n';
+    }
+    
+    const decisionMessage = `🛤️ ${choice.title.toUpperCase()} 🛤️
+
+${choice.scenario}${urgencyMessage}
+
+Current Status:
+• Stamina: ${Math.floor(stamina)}%
+• Water: ${Math.floor(water)}%
+• Time: ${formatTime(gameTime.hours, gameTime.minutes)}
+
+Choose your approach:
+
+1️⃣ ${choice.options[0].title}
+${choice.options[0].description}
+
+2️⃣ ${choice.options[1].title}
+${choice.options[1].description}
+
+Type "1" for first option, "2" for second option, or leave blank for random choice:`;
+
+    let userChoice = prompt(decisionMessage);
+    
+    // Handle empty input (random choice)
+    if (userChoice === null || userChoice.trim() === '') {
+      userChoice = Math.random() < 0.5 ? '1' : '2';
+      const selectedOption = choice.options[parseInt(userChoice) - 1];
+      alert(`Random choice made: ${selectedOption.title}`);
+      applyChoiceEffects(selectedOption);
+    } else if (userChoice === '1' || userChoice === '2') {
+      const selectedOption = choice.options[parseInt(userChoice) - 1];
+      applyChoiceEffects(selectedOption);
+    } else {
+      // Invalid choice, reprompt with clarification
+      alert('Please choose 1, 2, or leave blank for random choice');
+      setTimeout(() => {
+        applyObjectEffect(obj); // Retry the same object
+      }, 100);
+      return;
+    }
+  } else {
+    // No choices for this object, use original effect
+    applyOriginalEffect(objectType);
+  }
+  
+  gameActive = true; // Resume game
+}
+
+// Function to apply choice effects
+function applyChoiceEffects(option) {
+  // Store old time for comparison
+  const oldHours = gameTime.hours;
+  const oldMinutes = Math.floor(gameTime.minutes);
+  
+  // Calculate actual effects with difficulty multipliers
+  const penaltyMultiplier = difficultySettings[difficulty].penaltyMultiplier;
+  
+  const actualStaminaChange = option.effects.stamina * (option.effects.stamina < 0 ? penaltyMultiplier : 1);
+  const actualWaterChange = option.effects.water * (option.effects.water < 0 ? penaltyMultiplier : 1);
+  const actualTimeChange = option.effects.time * (option.effects.time > 0 ? penaltyMultiplier : 1);
+  
+  // Apply effects
+  stamina += actualStaminaChange;
+  water += actualWaterChange;
+  gameTime.minutes += actualTimeChange;
+  
+  // Handle time overflow
+  while (gameTime.minutes >= 60) {
+    gameTime.minutes -= 60;
+    gameTime.hours += 1;
+  }
+  
+  // Clamp values
+  if (stamina > 100) stamina = 100;
+  if (stamina < 0) stamina = 0;
+  if (water > 100) water = 100;
+  if (water < 0) water = 0;
+  
+  // Update displays
+  updateTimerDisplay();
+  updateStaminaDisplay();
+  updateWaterDisplay();
+  
+  // Check milestones after applying effects
+  checkMilestones();
+  
+  // Check game end conditions immediately after choice effects
+  if (stamina <= 0) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearInterval(moveInterval);
+
+    playSound('lose');
+
+    const staminaFailMessage = `😵 COLLAPSED FROM EXHAUSTION! 😵
+
+Your body gave out during the journey. You collapsed miles from home.
+
+Consequences:
+• Risk of dehydration or heatstroke
+• Danger from robbery or assault
+• Your family doesn't know where you are
+• No water for your family today
+
+📊 THE HARSH REALITY 📊
+Millions face this daily risk walking hours for water. Many collapse from exhaustion carrying loads too heavy for their bodies.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help bring clean water closer to communities.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+
+    setTimeout(() => {
+      showEndOutcome(staminaFailMessage);
+    }, 200);
+    return;
+  }
+
+  if (gameTime.hours >= 20) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearInterval(moveInterval);
+
+    playSound('lose');
+
+    const timeFailMessage = `⏰ TOO LATE! ⏰
+
+You didn't make it home before dark. Now you face a terrible choice:
+
+• Return home empty-handed, leaving your family without water
+• Continue in dangerous darkness, risking attack or getting lost
+• Sleep outdoors and try again tomorrow
+
+Your family will go another day without clean water.
+
+📊 THE HARSH REALITY 📊
+This happens every day to millions of families worldwide. When the water source is far away, even starting early sometimes isn't enough.
+
+Many families send their children on these journeys, forcing them to miss school and risk their safety for something as basic as water.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help ensure families have clean water close to home.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+
+    setTimeout(() => {
+      showEndOutcome(timeFailMessage);
+    }, 200);
+    return;
+  }
+  
+  // Show result message
+  const newHours = gameTime.hours;
+  const newMinutes = Math.floor(gameTime.minutes);
+  
+  let resultMessage = `CHOICE RESULT:\n\n${option.title}`;
+  
+  if (actualStaminaChange !== 0) resultMessage += `\nStamina: ${actualStaminaChange > 0 ? '+' : ''}${Math.floor(actualStaminaChange)}`;
+  if (actualWaterChange !== 0) resultMessage += `\nWater: ${actualWaterChange > 0 ? '+' : ''}${Math.floor(actualWaterChange)}`;
+  if (actualTimeChange !== 0) {
+    const oldTime = `${oldHours}:${oldMinutes.toString().padStart(2, '0')}`;
+    const newTime = `${newHours}:${newMinutes.toString().padStart(2, '0')}`;
+    resultMessage += `\nTime: ${oldTime} → ${newTime}`;
+  }
+  
+  resultMessage += `\n\nCurrent Status:
+• Stamina: ${Math.floor(stamina)}%
+• Water: ${Math.floor(water)}%
+• Time: ${formatTime(gameTime.hours, gameTime.minutes)}`;
+  
+  setTimeout(() => {
+    alert(resultMessage);
+  }, 100);
+}
+
+// Function to apply original effect (for water cans that don't have choices)
+function applyOriginalEffect(objectType) {
+  const effect = objectEffects[objectType];
+
+  if (!effect) return;
+
   // Store old time for comparison (format properly with decimals)
   const oldHours = gameTime.hours;
   const oldMinutes = Math.floor(gameTime.minutes);
   const oldTime = `${oldHours}:${oldMinutes.toString().padStart(2, '0')}`;
   
-  // Apply effects
-  stamina += effect.stamina;
-  water += effect.water;
+  // Calculate actual effects with difficulty multipliers
+  const penaltyMultiplier = difficultySettings[difficulty].penaltyMultiplier;
   
-  // Add time penalty (convert to same decimal system as timer)
-  gameTime.minutes += effect.time;
+  const actualStaminaChange = effect.stamina * (effect.stamina > 0 ? 1 : penaltyMultiplier);
+  const actualWaterChange = effect.water * (effect.water > 0 ? 1 : penaltyMultiplier);
+  const actualTimeChange = effect.time * penaltyMultiplier;
+  
+  // Apply the calculated effects
+  stamina += actualStaminaChange;
+  water += actualWaterChange;
+  gameTime.minutes += actualTimeChange;
   
   // Handle time overflow properly
   while (gameTime.minutes >= 60) {
@@ -390,17 +837,85 @@ function applyObjectEffect(obj) {
   if (water > 100) water = 100;
   if (water < 0) water = 0;
   
-  // Visual feedback - object stays visible but gets a gray overlay
-  obj.style.opacity = '0.5';
-  obj.style.filter = 'grayscale(100%)';
-  
   // Update displays immediately
   updateTimerDisplay();
   updateStaminaDisplay();
   updateWaterDisplay();
   
+  // Check milestones after applying effects
+  checkMilestones();
+  
+  // Check game end conditions immediately after applying effects
+  if (stamina <= 0) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearInterval(moveInterval);
+
+    playSound('lose');
+
+    const staminaFailMessage = `😵 COLLAPSED FROM EXHAUSTION! 😵
+
+Your body gave out during the journey. You collapsed miles from home.
+
+Consequences:
+• Risk of dehydration or heatstroke
+• Danger from robbery or assault
+• Your family doesn't know where you are
+• No water for your family today
+
+📊 THE HARSH REALITY 📊
+Millions face this daily risk walking hours for water. Many collapse from exhaustion carrying loads too heavy for their bodies.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help bring clean water closer to communities.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+
+    setTimeout(() => {
+      showEndOutcome(staminaFailMessage);
+    }, 200);
+    return;
+  }
+
+  if (gameTime.hours >= 20) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearInterval(moveInterval);
+
+    playSound('lose');
+
+    const timeFailMessage = `⏰ TOO LATE! ⏰
+
+You didn't make it home before dark. Now you face a terrible choice:
+
+• Return home empty-handed, leaving your family without water
+• Continue in dangerous darkness, risking attack or getting lost
+• Sleep outdoors and try again tomorrow
+
+Your family will go another day without clean water.
+
+📊 THE HARSH REALITY 📊
+This happens every day to millions of families worldwide. When the water source is far away, even starting early sometimes isn't enough.
+
+Many families send their children on these journeys, forcing them to miss school and risk their safety for something as basic as water.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help ensure families have clean water close to home.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+
+    setTimeout(() => {
+      showEndOutcome(timeFailMessage);
+    }, 200);
+    return;
+  }
+  
   // Enhanced visual feedback for time penalties
-  if (effect.time > 0) {
+  if (actualTimeChange > 0) {
     const timerElement = document.getElementById('timer');
     
     // Flash the timer red to show time penalty
@@ -411,25 +926,42 @@ function applyObjectEffect(obj) {
       timerElement.style.color = '';
     }, 1000);
     
-    console.log(`Time penalty! ${oldTime} → ${newTime} (+${effect.time} minutes)`);
+    console.log(`Time penalty! ${oldTime} → ${newTime} (+${Math.floor(actualTimeChange)} minutes)`);
   }
   
-  // Create a more detailed message showing the actual effects
-  let detailedMessage = effect.message;
-  if (effect.time > 0) {
-    detailedMessage += `\nTime changed from ${oldTime} to ${newTime}`;
+  // Create difficulty-adjusted message
+  let adjustedMessage = "";
+  
+  switch(objectType) {
+    case "img/water-can-transparent.png":
+      adjustedMessage = `Found water! +${Math.floor(actualStaminaChange)} stamina, +${Math.floor(actualWaterChange)} water`;
+      break;
+    case "img/hill.png":
+      adjustedMessage = `Steep hill! ${Math.floor(actualStaminaChange)} stamina, +${Math.floor(actualTimeChange)} minutes`;
+      break;
+    case "img/rock.png":
+      adjustedMessage = `Rocky terrain! ${Math.floor(actualStaminaChange)} stamina, ${Math.floor(actualWaterChange)} water, +${Math.floor(actualTimeChange)} minutes`;
+      break;
+    case "img/snake.png":
+      adjustedMessage = `Snake encounter! ${Math.floor(actualStaminaChange)} stamina, +${Math.floor(actualTimeChange)} minutes`;
+      break;
+    case "img/thermometer.png":
+      adjustedMessage = `Extreme heat! ${Math.floor(actualStaminaChange)} stamina, ${Math.floor(actualWaterChange)} water`;
+      break;
+    default:
+      adjustedMessage = effect.message;
+  }
+  
+  if (actualTimeChange > 0) {
+    adjustedMessage += `\nTime changed from ${oldTime} to ${newTime}`;
   }
   
   // Show effect message
-  console.log(detailedMessage);
-  
-  // Stop movement before showing alert to prevent stuck key issue
-  stopMoving();
-  rightKeyDown = false; // Reset key state
+  console.log(adjustedMessage);
   
   // Brief alert for now
   setTimeout(() => {
-    alert(detailedMessage);
+    alert(adjustedMessage);
   }, 100);
 }
 
@@ -446,23 +978,22 @@ function checkWinCondition() {
     gameActive = false;
     clearInterval(timerInterval);
     clearInterval(moveInterval);
-    
-    // Visual feedback for winning
+
+    playSound('win');
+    new Audio('sounds/home.mp3').play();
+
     const timerElement = document.getElementById('timer');
     timerElement.style.backgroundColor = '#28a745';
     timerElement.style.color = 'white';
     timerElement.textContent = '🏠 You Made It Home!';
-    
-    // Make house glow/celebrate
+
     house.style.transform = 'scale(1.2)';
     house.style.boxShadow = '0 0 20px #28a745';
     house.style.backgroundColor = 'rgba(40, 167, 69, 0.2)';
-    
-    // Determine outcome based on water level
+
     let outcomeMessage = "Congratulations! You made it home!\n\n";
-    
+
     if (water < 50) {
-      // Not enough water scenario
       outcomeMessage += `💧 WATER SHORTAGE 💧
 You arrived with only ${Math.floor(water)}% water remaining.
 
@@ -474,7 +1005,6 @@ The lack of water means:
 • Your children miss school due to dehydration
 • You must choose between drinking water and sharing with your family`;
     } else {
-      // Has water but it's contaminated
       const contaminationOutcomes = [
         `🦠 CONTAMINATED WATER - MEDICAL CRISIS 🦠
 You brought home ${Math.floor(water)}% water, but it was contaminated with bacteria.
@@ -503,11 +1033,11 @@ Multiple family members become sick after drinking it:
 • Medical bills drain your emergency savings
 • The cycle of poverty deepens as illness leads to lost opportunities`
       ];
-      
+
       const randomOutcome = contaminationOutcomes[Math.floor(Math.random() * contaminationOutcomes.length)];
       outcomeMessage += randomOutcome;
     }
-    
+
     outcomeMessage += `
 
 📊 THE HARSH REALITY 📊
@@ -521,9 +1051,11 @@ You can help change this story for real families.
 Learn more: https://www.charitywater.org
 
 🔄 To play again, refresh this page.`;
-    
-    alert(outcomeMessage);
-    console.log('Game won - reached the house!');
+
+    setTimeout(() => {
+      showEndOutcome(outcomeMessage);
+      console.log('Game won - reached the house!');
+    }, 200);
   }
 }
 
@@ -562,16 +1094,40 @@ function updateBackgroundParallax() {
   // Sun stays fixed in the sky (no movement)
 }
 
-// Function to start moving
+// Only allow movement and timer after DOM and images are loaded
+let gameReady = false;
+
+// Wait for DOM and all images to load before enabling game
+function setGameReady() {
+  // Wait for DOMContentLoaded and all images (logo, clouds, player, etc.)
+  const logoImg = document.querySelector('.cw-logo') || document.createElement('img');
+  // If logo is not in DOM yet, fallback to checking window load
+  if (logoImg.complete !== undefined && !logoImg.complete) {
+    logoImg.onload = () => {
+      gameReady = true;
+    };
+  } else {
+    gameReady = true;
+  }
+}
+
+// Prevent movement and timer until gameReady is true
+function safeStartTimer() {
+  if (!gameReady) {
+    setTimeout(safeStartTimer, 50);
+    return;
+  }
+  startTimer();
+}
+
+// Overwrite movement functions to check gameReady
 function startMoving() {
-  if (!gameActive || isPaused) return;
-  if (moveInterval) return; // Already moving
-  
+  if (!gameActive || isPaused || !gameReady) return;
+  if (moveInterval) return;
   isMoving = true;
   moveInterval = setInterval(movePlayer, 50);
 }
 
-// Function to stop moving
 function stopMoving() {
   isMoving = false;
   clearInterval(moveInterval);
@@ -595,12 +1151,12 @@ function movePlayer() {
 const moveButton = document.getElementById('moveButton');
 const pauseButton = document.getElementById('pauseButton');
 
-moveButton.addEventListener('mousedown', startMoving);
+moveButton.addEventListener('mousedown', () => { if (gameReady) startMoving(); });
 moveButton.addEventListener('mouseup', stopMoving);
 moveButton.addEventListener('mouseleave', stopMoving);
 moveButton.addEventListener('touchstart', (e) => {
-  e.preventDefault(); // Prevent scrolling on mobile
-  startMoving();
+  e.preventDefault();
+  if (gameReady) startMoving();
 });
 moveButton.addEventListener('touchend', stopMoving);
 moveButton.addEventListener('touchcancel', stopMoving);
@@ -612,7 +1168,7 @@ pauseButton.addEventListener('click', togglePause);
 let rightKeyDown = false;
 
 window.addEventListener('keydown', (event) => {
-  if (!gameActive) return;
+  if (!gameActive || !gameReady) return;
   if (event.key === 'ArrowRight' && !rightKeyDown) {
     rightKeyDown = true;
     startMoving();
@@ -642,9 +1198,161 @@ window.addEventListener('focus', () => {
   stopMoving();
 });
 
+// Function to show the end outcome in a centered div (like milestone)
+function showEndOutcome(message) {
+  const endOutcomeContainer = document.getElementById('endOutcomeContainer');
+  const endOutcomeMessage = document.getElementById('endOutcomeMessage');
+
+  // Clear the outcome message div (logo removed)
+  endOutcomeMessage.innerHTML = '';
+
+  // Responsive message shortening
+  let shortMsg = message;
+  if (window.innerWidth <= 600) {
+    if (message.includes('TOO LATE')) {
+      shortMsg = "⏰ Too late! You didn't make it home before dark.\n\nThis is the daily reality for millions.";
+    } else if (message.includes('COLLAPSED FROM EXHAUSTION')) {
+      shortMsg = "😵 You collapsed from exhaustion.\n\nMany face this risk every day.";
+    } else if (message.includes('Congratulations!')) {
+      shortMsg = "🏠 You made it home!\n\nBut the water is still unsafe.";
+    }
+  } else if (window.innerWidth > 1023) {
+    if (message.includes('TOO LATE')) {
+      shortMsg = `⏰ TOO LATE! ⏰
+
+You didn't make it home before dark. Now you face a terrible choice:
+
+• Return home empty-handed, leaving your family without water
+• Continue in dangerous darkness, risking attack or getting lost
+
+Your family will go another day without clean water.
+
+📊 THE HARSH REALITY 📊
+This happens every day to millions of families worldwide.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help ensure families have clean water close to home.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+    } else if (message.includes('COLLAPSED FROM EXHAUSTION')) {
+      shortMsg = `😵 COLLAPSED FROM EXHAUSTION! 😵
+
+Your body gave out during the journey. You collapsed miles from home.
+
+Consequences:
+• Risk of dehydration or heatstroke
+• Danger from robbery or assault
+
+📊 THE HARSH REALITY 📊
+Millions face this daily risk walking hours for water.
+
+🌍 MAKE A DIFFERENCE 🌍
+Help bring clean water closer to communities.
+
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+    } else if (message.includes('Congratulations!')) {
+      shortMsg = `Congratulations! You made it home!
+
+${message.includes('💧 WATER SHORTAGE 💧') ? `💧 WATER SHORTAGE 💧
+You arrived with only ${Math.floor(water)}% water remaining.
+
+Unfortunately, this isn't enough water for your entire family.
+` : ''}
+
+${message.includes('CONTAMINATED WATER') ? `The water you brought home is contaminated. Your family faces illness or must spend precious resources to make it safe.
+` : ''}
+
+📊 THE HARSH REALITY 📊
+This is the daily reality for 2 billion people worldwide.
+
+🌍 MAKE A DIFFERENCE 🌍
+Learn more: https://www.charitywater.org
+
+🔄 To play again, refresh this page.`;
+    }
+  }
+
+  // Add the message
+  const msgDiv = document.createElement('div');
+  msgDiv.textContent = shortMsg;
+  msgDiv.style.marginTop = "0.5rem";
+  msgDiv.style.whiteSpace = "pre-line";
+  endOutcomeMessage.appendChild(msgDiv);
+
+  // Add the links at the bottom
+  const linksDiv = document.createElement('div');
+  linksDiv.style.marginTop = "1.2rem";
+  linksDiv.style.display = "flex";
+  linksDiv.style.flexDirection = "column";
+  linksDiv.style.alignItems = "center";
+  linksDiv.innerHTML = `
+    <a href="https://www.charitywater.org" target="_blank" rel="noopener noreferrer" style="color:#2E9DF7; font-weight:bold; text-decoration:underline; margin-bottom:0.5rem; font-size:1.05em;">
+      🌍 Learn More
+    </a>
+    <a href="https://www.charitywater.org/donate" target="_blank" rel="noopener noreferrer" style="color:#FFC907; font-weight:bold; text-decoration:underline; font-size:1.05em;">
+      💧 Donate Now
+    </a>
+  `;
+  endOutcomeMessage.appendChild(linksDiv);
+
+  // Show the outcome container
+  endOutcomeContainer.style.display = 'flex';
+  endOutcomeMessage.classList.add('show');
+
+  // Hide the message when the user clicks anywhere
+  endOutcomeContainer.onclick = function() {
+    endOutcomeContainer.style.display = 'none';
+    endOutcomeMessage.classList.remove('show');
+  };
+}
+
+// Function to show difficulty selection
+function showDifficultySelection() {
+  const difficultyMessage = `🎮 SELECT DIFFICULTY 🎮
+
+Choose your challenge level:
+
+🟢 EASY MODE:
+• Slower time progression (80% speed)
+• Slower stamina drain over time (80% rate)
+• Faster stamina recovery when resting (130% rate)
+• Reduced obstacle penalties (80% damage)
+
+🟡 NORMAL MODE:
+• Standard time progression
+• Normal stamina drain and recovery
+• Standard obstacle penalties
+• Balanced experience
+
+🔴 HARD MODE:
+• Faster time progression (130% speed)
+• Faster stamina drain over time (130% rate)
+• Slower stamina recovery when resting (70% rate)
+• Increased obstacle penalties (150% damage)
+
+Type 'easy', 'normal', or 'hard' in the next prompt.`;
+
+  alert(difficultyMessage);
+  
+  let selectedDifficulty;
+  do {
+    selectedDifficulty = prompt("Select difficulty: easy, normal, or hard").toLowerCase().trim();
+  } while (!['easy', 'normal', 'hard'].includes(selectedDifficulty));
+  
+  difficulty = selectedDifficulty;
+  
+  alert(`Difficulty set to: ${difficultySettings[difficulty].label} Mode!`);
+}
+
 // Function to show game instructions
 function showGameInstructions() {
   const instructions = `Welcome to "The Long Walk"!
+
+CURRENT DIFFICULTY: ${difficultySettings[difficulty].label.toUpperCase()} MODE
 
 HOW TO PLAY:
 • Use the RIGHT ARROW KEY or MOVE BUTTON to walk
@@ -653,10 +1361,10 @@ HOW TO PLAY:
 
 OBSTACLES:
 • Water Can: +20 stamina, +30 water (Good!)
-• Hill: -15 stamina, +10 minutes (Tiring climb)
-• Rock: -10 stamina, -5 water, +5 minutes (Rough terrain)
-• Snake: -20 stamina, +10 minutes (Dangerous!)
-• Heat: -5 stamina, -10 water (Dehydration)
+• Hill: Choice between climb over or walk around
+• Rock: Choice between navigate carefully or rush across
+• Snake: Choice between scare it or go around carefully
+• Heat: Choice between rest and wait or push through
 
 CONTROLS:
 • RIGHT ARROW or MOVE BUTTON: Move forward
@@ -670,8 +1378,11 @@ Good luck on your journey!`;
 
 // Generate objects and start timer when the page loads
 window.addEventListener('DOMContentLoaded', () => {
-  showGameInstructions(); // Show instructions first
+  initializeSounds(); // Initialize sound system first
+  showDifficultySelection(); // Show difficulty selection first
+  showGameInstructions(); // Show instructions after difficulty is set
   generateRandomObjects();
   updateCamera(); // Set initial camera position
-  startTimer(); // Start the game timer
+  setGameReady();
+  safeStartTimer();
 });

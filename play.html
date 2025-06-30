@@ -4,8 +4,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta charset="UTF-8">
   <title>The Long Walk</title>
-  <!-- Google Fonts: Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Source Sans Pro (charity: water brand font) -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="play-page daytime">
@@ -22,6 +22,19 @@
       <span class="time" id="timer">⏱ 8:00 AM</span>
     </div>
   </header>
+
+  <!-- Milestone Display -->
+  <div class="milestone-container" id="milestoneContainer">
+    <div class="milestone-message" id="milestoneMessage"></div>
+  </div>
+
+  <!-- End Outcome Display (shows when you win, collapse, or run out of time) -->
+  <div id="endOutcomeContainer">
+    <div id="endOutcomeMessage">
+      <!-- Outcome message will appear here (logo removed) -->
+    </div>
+  </div>
+
   <div class="game-container" id="gameContainer">
     <div class="sky-container" id="skyContainer">
       <div class="cloud cloud1" id="cloud1"></div>
@@ -39,6 +52,54 @@
         <button class="gameplay-button move-button" id="moveButton">➡️ Move</button>
       </div>
     </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="game-footer">
+    <div class="footer-content">
+      <div class="footer-message">
+        <p class="footer-text">This game represents the daily reality for 2 billion people worldwide.</p>
+        <p class="footer-call-to-action">Help bring clean water to communities in need.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://www.charitywater.org" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <span class="link-icon">🌍</span>
+          <span class="link-text">Learn More</span>
+        </a>
+        <a href="https://www.charitywater.org/donate" target="_blank" rel="noopener noreferrer" class="footer-link donate-link">
+          <span class="link-icon">💧</span>
+          <span class="link-text">Donate Now</span>
+        </a>
+      </div>
+      <div class="footer-attribution">
+        <p>
+          Powered by
+          <img src="img/cw_logo_horizontal.png" alt="charity: water" style="height: 22px; vertical-align: middle;">
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Audio Elements -->
+  <audio id="collectSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAoOXq/p66lMEgdEnOTtwWN4AB6MtfLHeBB"></source>
+  </audio>
+  <audio id="obstacleSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRkQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAEAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAo="></source>
+  </audio>
+  <audio id="winSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRkQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAEAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAo="></source>
+  </audio>
+  <audio id="loseSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRkQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAEAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAo="></source>
+  </audio>
+  <audio id="choiceSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRkQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAEAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAo="></source>
+  </audio>
+  <audio id="milestoneSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRkQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAEAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBJHfK7d2QQAoUXrTp66hVFApGn+DyvmUeByeM0/LNdyoBlXfH8N2QQAo="></source>
+  </audio>
+
   <script src="script.js"></script>
 </body>
 </html>
